@@ -1,1 +1,2 @@
-pycorrfit
+# install pycorrfit directly from github to fix new numpy clash
+git+https://github.com/FCS-analysis/PyCorrFit.git
