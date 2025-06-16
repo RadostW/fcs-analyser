@@ -1,0 +1,57 @@
+
+
+# 1. Assume all curves have the same lag times
+x_vals = corr_good[0][:, 0]  # common x-axis
+G_matrix = []
+
+# 2. Collect only valid G(τ) arrays (same x)
+for curve in corr_good:
+    if curve.shape[0] == len(x_vals) and np.allclose(curve[:, 0], x_vals):
+        G_matrix.append(curve[:, 1])
+
+G_matrix = np.array(G_matrix)
+
+# 3. Average G(τ) point by point
+G_mean = np.mean(G_matrix, axis=0)
+
+# 4. Plot averaged correlation curve
+plt.plot(x_vals, G_mean, label="Average Correlation", color="blue")
+plt.xscale("log")
+plt.xlabel("Lag time (s)")
+plt.ylabel("G(τ)")
+plt.title("Averaged Correlation Curve")
+plt.grid(True)
+plt.legend()
+plt.show()
+
+# 5. Fit the model function f(t, n, T, td, SP)
+def f(t, n, T, td, SP):
+    tau_trip = 4e-6
+    A = 1
+    return A + (1/n) * (1 + t/td)**-1 * (1 + t/(SP**2 * td))**-0.5 * (1 + T * np.exp(-t/tau_trip) / (1 - T))
+
+# Initial guess and bounds
+p0 = [2, 0.02, 2e-5, 5]
+bounds = ([1e-3, 1e-6, 1e-8, 1e-2], [1e3, 0.99, 1, 1e2])
+
+# 6. Fit to the averaged curve
+p_avg, pcov_avg = curve_fit(f, x_vals, G_mean, p0=p0, bounds=bounds)
+err_avg = np.sqrt(np.diag(pcov_avg))
+
+print("Fit to average correlation:")
+print("Params:", p_avg)
+print("Errors:", err_avg)
+
+# 7. Plot the fit
+plt.plot(x_vals, G_mean, label="Average Correlation", color="blue")
+plt.plot(x_vals, f(x_vals, *p_avg), label="Fit", color="red", linestyle="--")
+plt.xscale("log")
+plt.xlabel("Lag time (s)")
+plt.ylabel("G(τ)")
+plt.title("Fit do uśrednionych z fix $\tau_{trip}$")
+plt.grid(True)
+plt.legend()
+plt.show()
+
+SP_fix=p_avg[3]
+print('sp do zafiksowania', SP_fix)
